@@ -1,4 +1,7 @@
 #lang racket
+(require rackunit)
+(require rackunit/text-ui)
+(require "lat-define.rkt")
 
 (define (rember1 a lat) (
     remberInner a '() lat
@@ -34,3 +37,57 @@
 
 (rember1 'and '(bacon and lettuce and tomato))
 (rember2 'and '(bacon and lettuce and tomato))
+
+(define rember* (lambda (a l) (
+    cond
+    ((null? l) '())
+    ((atom? (car l)) (
+        cond
+        ((eq? a (car l)) (rember* a (cdr l)))
+        (else (cons (car l) (rember* a (cdr l))))
+        ))
+    (else (cons (rember* a (car l)) (rember* a (cdr l))))
+    )))
+
+(define rember*-tests
+    (test-suite "rember*"
+        (test-case "mixed nesting"
+            (check-equal?
+                (rember*
+                    'cup
+                    '(
+                        (coffee)
+                        cup
+                        ((tea) cup)
+                        (and (hick))
+                        cup
+                        )
+                    )
+                '(
+                    (coffee)
+                    ((tea))
+                    (and (hick))
+                    )
+                )
+            )
+        (test-case "deeper nesting"
+                    (check-equal?
+                        (rember*
+                            'sauce
+                            '(
+                                ((tomato sauce))
+                                ((bean) sauce)
+                                (and ((flying)) sauce)
+                                )
+                            )
+                        '(
+                            ((tomato))
+                            ((bean))
+                            (and ((flying)))
+                            )
+                        )
+                    )
+        )
+    )
+
+(run-tests rember*-tests)

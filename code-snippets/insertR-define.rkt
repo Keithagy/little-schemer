@@ -1,6 +1,7 @@
 #lang racket
 (require rackunit)
 (require rackunit/text-ui)
+(require "lat-define.rkt")
 
 (define (insertR new old lat)
     (
@@ -46,3 +47,45 @@
         )
     )
 (run-tests insertR-tests)
+
+(define insertR* (lambda (new old l) (
+    cond
+    ((null? l) '())
+    ((atom? (car l)) (
+        cond
+        ((eq? old (car l)) (cons (car l) (cons new (insertR* new old (cdr l)))))
+        (else (cons (car l) (insertR* new old (cdr l))))
+        ))
+    (else (cons (insertR* new old (car l)) (insertR* new old (cdr l))))
+    )))
+
+(define insertR*-tests
+    (test-suite "insertR*"
+        (test-case "variable nesting depth"
+            (check-equal?
+                (insertR*
+                    'roast
+                    'chuck
+                    '(
+                        (how much (wood))
+                        could
+                        ((a (wood) chuck))
+                        (((chuck)))
+                        (if (a) ((wood chuck)))
+                        could chuck wood
+                        )
+                    )
+                '(
+                    (how much (wood))
+                    could
+                    ((a (wood) chuck roast))
+                    (((chuck roast)))
+                    (if (a) ((wood chuck roast)))
+                    could chuck roast wood
+                    )
+                )
+            )
+        )
+    )
+
+(run-tests insertR*-tests)
